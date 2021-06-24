@@ -50,7 +50,7 @@ def main():
                 indexThumbLength = math.hypot((cx2 - cx1), (cy2 - cy1))
                 vol = np.interp(indexThumbLength, [50, 300], [0, 100])
 
-                # Change volume
+                # Change volume #######################################################################################
                 subprocess.check_output(
                     f'''osascript -e "set volume without output muted output volume {vol} --100%"''', shell=True)
 
