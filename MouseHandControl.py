@@ -12,15 +12,24 @@ mouse = Controller()
 cap = cv2.VideoCapture(0)
 screenW, screenH = pyautogui.size()
 screenCX, screenCY = screenW / 2, screenH / 2
-tracker = hT.handTracking(maxHands=1, detectionCon=0.5, trackCon=0.5)
+tracker = hT.handTracking(maxHands=1, detectionCon=0.5, trackCon=0.65)
 isPressed = False
 IsInteracting = False
-distanceToInteract = 25
+distanceToInteract = 30
 distanceToInteract2 = 30
 PlotDataX = []
 PlotDataY = []
 
 #######################################################################################################################
+
+# Average out the data for 10 frames
+# positionsX = [0] * 5
+# positionsY = [0] * 5
+# positionsCount = 0
+prevCursonX = -1
+prevCursonY = -1
+cursorX = -1
+cursorY = -1
 
 while True:
 
@@ -43,16 +52,33 @@ while True:
         cx1, cy1 = (x1 + x2) // 2, (y1 + y2) // 2  # get midpoint coordinates of thumb and index finger
         indexThumbLength = math.hypot((x2 - x1), (y2 - y1))  # get length between index finger and thumb
         x3, y3, z3 = lmList[12][1], lmList[12][2], lmList[12][3]  # get middle finger tip x and y and z coordinates
-        cx2, cy2 = (x1 + x3) // 2, (y1 + y3) // 2  # get midpoint coordinates of thumb and index finger
+        cx2, cy2 = (x1 + x3) // 2, (y1 + y3) // 2  # get midpoint coordinates of thumb and middle finger
         middleThumbLength = math.hypot((x3 - x1), (y3 - y1))
 
-        # Set mouse position
+        if prevCursonX == -1 or prevCursonY == -1 or cursorX == -1 or cursorY == -1:
+            prevCursonX = cx1
+            prevCursonY = cy1
 
-        xLengthScaled = (cx1 - imgCX) * scaleFactor
-        yLengthScaled = (cy1 - imgCY) * scaleFactor
-        endPointX = screenCX + xLengthScaled
-        endPointY = screenCY + yLengthScaled
-        mouse.position = (endPointX, endPointY)
+        # Ignore minor changes in cursor position
+        threshold = 3
+        if abs(cx1 - prevCursonX) < threshold and abs(cy1 - prevCursonY) < threshold and \
+            abs(cx1 - cursorX) < threshold and abs(cy1 - cursorY) < threshold:
+            print("Ignoring")
+            # xLengthScaled = (prevCursonX - imgCX) * scaleFactor
+            # yLengthScaled = (prevCursonY - imgCY) * scaleFactor
+        
+        else:
+            print("Not Ignoring")
+            xLengthScaled = (cx1 - imgCX) * scaleFactor
+            yLengthScaled = (cy1 - imgCY) * scaleFactor
+            endPointX = screenCX + xLengthScaled
+            endPointY = screenCY + yLengthScaled
+            mouse.position = (endPointX, endPointY)
+            cursorX = cx1
+            cursorY = cy1
+
+        prevCursonX = cx1
+        prevCursonY = cy1
 
         # Controls ####################################################################################################
 
@@ -114,8 +140,12 @@ while True:
         ###############################################################################################################
 
     else:
+        prevCursonX = -1
+        prevCursonY = -1
+        cursorX = -1
+        cursorY = -1
         isPressed = False
         IsInteracting = False
 
-    # cv2.imshow("Video Capture", img)
+    cv2.imshow("Video Capture", img)
     cv2.waitKey(1)
