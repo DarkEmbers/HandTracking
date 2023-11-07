@@ -3,6 +3,8 @@ import numpy as np
 import HandTracking as ht
 import math
 import subprocess
+from pyvolume import pyvolume
+import time
 
 # Params ##############################################################################################################
 cap = cv2.VideoCapture(0)
@@ -21,6 +23,7 @@ def main():
         success, img = cap.read()
         img = cv2.flip(img, 1)
         img = tracker.findHands(img)
+        cx1,cy1,cx2,cy2 = 0,0,0,0
 
         # Find Landmarks on Hand 1 ####################################################################################
         try:
@@ -30,7 +33,7 @@ def main():
 
         except:
             isTrigger1On = False
-            pass
+            continue
 
         # Find Landmarks on Hand 2 ####################################################################################
         try:
@@ -40,27 +43,28 @@ def main():
 
         except:
             isTrigger2On = False
-            pass
+            continue
 
         # Volume control ##############################################################################################
-        try:
-            # Check if Index finger is tapping with Thumb and change volume ###########################################
-            if isTrigger1On and isTrigger2On:
-                cv2.line(img, (cx1, cy1), (cx2, cy2), (255, 0, 0), 3)
-                indexThumbLength = math.hypot((cx2 - cx1), (cy2 - cy1))
-                vol = np.interp(indexThumbLength, [50, 300], [0, 100])
+        # try:
+        # Check if Index finger is tapping with Thumb and change volume ###############################################
+        if isTrigger1On and isTrigger2On:
+            cv2.line(img, (cx1, cy1), (cx2, cy2), (255, 0, 0), 3)
+            indexThumbLength = math.hypot((cx2 - cx1), (cy2 - cy1))
+            vol = np.interp(indexThumbLength, [50, 300], [0, 100])
 
-                # Change volume #######################################################################################
-                subprocess.check_output(
-                    f'''osascript -e "set volume without output muted output volume {vol} --100%"''', shell=True)
+            # Change volume ###############################################################################################
+            pyvolume(level = vol)
 
-        except:
-            pass
+        # except:
+            # pass
 
         ###############################################################################################################
 
         cv2.imshow("Video Capture", img)
         cv2.waitKey(1)
+
+        time.sleep(0.01)
 
 
 def handInfo(lmList, img):
